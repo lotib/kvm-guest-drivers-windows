@@ -470,7 +470,16 @@ public:
     }
     void OnPnPEvent(PNET_PNP_EVENT_NOTIFICATION NetPnPEventNotification)
     {
-        TraceNoPrefix(0, "[%s] event %X\n", __FUNCTION__, NetPnPEventNotification->NetPnPEvent.NetEvent);
+        NET_PNP_EVENT_CODE ev = NetPnPEventNotification->NetPnPEvent.NetEvent;
+        TraceNoPrefix(0, "[%s] event %X\n", __FUNCTION__, ev);
+        if (ev == NetEventRestart)
+        {
+            m_BindCompleted = true;
+            if (m_Operational)
+            {
+                PostOpStateEvent();
+            }
+        }
     }
     CFlowStateMachine m_RxStateMachine;
     CFlowStateMachine m_TxStateMachine;
@@ -692,7 +701,10 @@ public:
             )
         {
             CProtocolBinding *binding = (CProtocolBinding *)ProtocolBindingContext;
-            binding->OnPnPEvent(NetPnPEventNotification);
+            if (binding)
+            {
+                binding->OnPnPEvent(NetPnPEventNotification);
+            }
             return NDIS_STATUS_SUCCESS;
         };
         NDIS_STATUS status = NdisRegisterProtocolDriver(this, &pchs, &m_ProtocolHandle);
